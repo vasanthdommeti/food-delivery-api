@@ -1,0 +1,150 @@
+{
+  "info": {
+    "name": "Food Delivery API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1" },
+    { "key": "vendorId", "value": "" },
+    { "key": "orderId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Create Vendor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "if (response && response.data && response.data._id) {",
+              "  pm.collectionVariables.set('vendorId', response.data._id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Vendor A\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/vendors",
+          "host": ["{{baseUrl}}"],
+          "path": ["vendors"]
+        }
+      }
+    },
+    {
+      "name": "List Vendors",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/vendors",
+          "host": ["{{baseUrl}}"],
+          "path": ["vendors"]
+        }
+      }
+    },
+    {
+      "name": "Activate Six Hit Promotion",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"discountPercent\": 60,\n  \"durationMinutes\": 10\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/promotions/six-hit/activate",
+          "host": ["{{baseUrl}}"],
+          "path": ["promotions", "six-hit", "activate"]
+        }
+      }
+    },
+    {
+      "name": "Promotion Status",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/promotions/six-hit",
+          "host": ["{{baseUrl}}"],
+          "path": ["promotions", "six-hit"]
+        }
+      }
+    },
+    {
+      "name": "Create Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "if (response && response.data && response.data.id) {",
+              "  pm.collectionVariables.set('orderId', response.data.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"user_123\",\n  \"vendorId\": \"{{vendorId}}\",\n  \"items\": [\n    { \"name\": \"Burger\", \"quantity\": 2, \"price\": 150 },\n    { \"name\": \"Fries\", \"quantity\": 1, \"price\": 80 }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"]
+        }
+      }
+    },
+    {
+      "name": "Get Order",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders", "{{orderId}}"]
+        }
+      }
+    },
+    {
+      "name": "Deactivate Six Hit Promotion",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/promotions/six-hit/deactivate",
+          "host": ["{{baseUrl}}"],
+          "path": ["promotions", "six-hit", "deactivate"]
+        }
+      }
+    }
+  ]
+}
