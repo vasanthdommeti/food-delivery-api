@@ -4,7 +4,8 @@ const env = require('./env');
 const connectDb = async () => {
   mongoose.set('strictQuery', true);
   await mongoose.connect(env.mongoUri, {
-    serverSelectionTimeoutMS: 5000
+    serverSelectionTimeoutMS: 5000,
+    maxPoolSize: env.mongoMaxPoolSize
   });
 };
 

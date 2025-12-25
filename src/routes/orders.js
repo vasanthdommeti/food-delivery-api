@@ -2,6 +2,7 @@ const express = require('express');
 const Order = require('../models/Order');
 const Vendor = require('../models/Vendor');
 const env = require('../config/env');
+const { orderLimiter } = require('../middlewares/rateLimiter');
 const { getActivePromotion, PROMO_TYPE } = require('../services/promotionService');
 const { calculateTotals } = require('../services/pricingService');
 const asyncHandler = require('../utils/asyncHandler');
@@ -11,6 +12,7 @@ const router = express.Router();
 
 router.post(
   '/',
+  ...(env.orderRateLimitEnabled ? [orderLimiter] : []),
   asyncHandler(async (req, res) => {
     const { userId, vendorId, items } = req.body || {};
 

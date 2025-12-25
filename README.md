@@ -44,7 +44,9 @@ npm run dev
 ## Performance / Scaling Notes
 - Indexed `vendorId` and `createdAt` on orders to support high-throughput reads and metrics.
 - Minimal per-request queries (vendor lookup, optional capacity check, promotion lookup).
-- Optional vendor capacity enforcement via `ENFORCE_VENDOR_LIMIT`.
+- Vendor capacity enforcement via `ENFORCE_VENDOR_LIMIT` (defaults to true).
+- Configurable per-IP rate limiting for the API and order placement (`RATE_LIMIT_*`, `ORDER_RATE_LIMIT_*`).
+- Configurable MongoDB pool size (`MONGO_MAX_POOL_SIZE`) to tune concurrent connections.
 - Stateless API design enables horizontal scaling behind a load balancer.
 
 ## Deployment (AWS Lightsail)
@@ -57,6 +59,11 @@ npm run dev
    pm2 start src/index.js --name food-delivery-api
    pm2 save
    pm2 startup
+   ```
+   For multi-core scaling, use the provided `ecosystem.config.js`:
+   ```bash
+   pm2 start ecosystem.config.js
+   pm2 save
    ```
 5. Configure Lightsail networking to allow inbound traffic on your API port.
 
