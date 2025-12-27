@@ -100,10 +100,10 @@ Import it and set the `baseUrl` variable (example: `http://localhost:3000/api/v1
 Enable in `.env`:
 ```
 TESTING_ENDPOINT_ENABLED=true
-TESTING_ENDPOINT_TOKEN=your-secret-token
+TESTING_ENDPOINT_TOKEN=test-token-123
 ```
 
-Then call with header `x-test-token: your-secret-token`.
+Then call with header `x-test-token: test-token-123`.
 
 Rate-limit test (POST `/testing/rate-limit`):
 ```json
