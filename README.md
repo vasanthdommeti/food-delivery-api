@@ -20,6 +20,8 @@ Base URL: `/api/v1`
 - `GET /products/:id`
 - `POST /orders`
 - `GET /orders/:id`
+- `POST /testing/rate-limit` (disabled by default)
+- `POST /testing/out-of-stock` (disabled by default)
 
 ## Setup Instructions
 
@@ -41,6 +43,7 @@ npm run dev
 - Discounts apply while the promotion is active and before `expiresAt`.
 - Currency uses decimal numbers (2-decimal rounding). For production, consider integer minor units.
 - When `productId` is provided in order items, price/name are taken from inventory and stock is decremented atomically.
+- Testing endpoints are disabled by default and require an env flag + optional token.
 
 ## Performance / Scaling Notes
 - Indexed `vendorId` and `createdAt` on orders to support high-throughput reads and metrics.
@@ -87,3 +90,34 @@ A Postman collection is included at:
 - `postman/food-delivery-api.postman_collection.json`
 
 Import it and set the `baseUrl` variable (example: `http://localhost:3000/api/v1`).
+
+## Testing Endpoints (Optional)
+Enable in `.env`:
+```
+TESTING_ENDPOINT_ENABLED=true
+TESTING_ENDPOINT_TOKEN=your-secret-token
+```
+
+Then call with header `x-test-token: your-secret-token`.
+
+Rate-limit test (POST `/testing/rate-limit`):
+```json
+{
+  "vendorId": "<vendorId>",
+  "requests": 150,
+  "concurrency": 25,
+  "includeResponses": false
+}
+```
+
+Out-of-stock test (POST `/testing/out-of-stock`):
+```json
+{
+  "vendorId": "<vendorId>",
+  "stock": 5,
+  "requests": 10,
+  "quantity": 1,
+  "concurrency": 10,
+  "includeResponses": false
+}
+```

@@ -18,7 +18,9 @@ const env = {
   rateLimitMax: parseNumber(process.env.RATE_LIMIT_MAX, 300),
   orderRateLimitEnabled: process.env.ORDER_RATE_LIMIT_ENABLED !== 'false',
   orderRateLimitWindowMs: parseNumber(process.env.ORDER_RATE_LIMIT_WINDOW_MS, 60 * 1000),
-  orderRateLimitMax: parseNumber(process.env.ORDER_RATE_LIMIT_MAX, 120)
+  orderRateLimitMax: parseNumber(process.env.ORDER_RATE_LIMIT_MAX, 120),
+  testEndpointEnabled: process.env.TESTING_ENDPOINT_ENABLED === 'true',
+  testEndpointToken: process.env.TESTING_ENDPOINT_TOKEN || ''
 };
 
 module.exports = env;
