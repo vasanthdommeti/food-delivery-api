@@ -21,6 +21,7 @@ Base URL: `/api/v1`
 - `POST /orders`
 - `GET /orders/:id`
 - `POST /testing/rate-limit` (disabled by default)
+- `POST /testing/global-rate-limit` (disabled by default)
 - `POST /testing/out-of-stock` (disabled by default)
 
 ## Setup Instructions
@@ -53,6 +54,10 @@ npm run dev
 - Configurable MongoDB pool size (`MONGO_MAX_POOL_SIZE`) to tune concurrent connections.
 - Stock deductions use atomic `$inc` + `$gte` to prevent overselling during bursts.
 - Stateless API design enables horizontal scaling behind a load balancer.
+
+## Rate Limits (Per IP)
+- Global API limit: `RATE_LIMIT_MAX` requests per `RATE_LIMIT_WINDOW_MS` (defaults: 300/min).
+- Order endpoint limit: `ORDER_RATE_LIMIT_MAX` requests per `ORDER_RATE_LIMIT_WINDOW_MS` (defaults: 120/min).
 
 ## Promotion Control (Internal)
 To enable/disable the six-hit discount without public APIs, update MongoDB directly:
@@ -106,7 +111,18 @@ Rate-limit test (POST `/testing/rate-limit`):
   "vendorId": "<vendorId>",
   "requests": 150,
   "concurrency": 25,
-  "includeResponses": false
+  "includeResponses": true,
+  "ipMode": "single"
+}
+```
+
+Global rate-limit test (POST `/testing/global-rate-limit`):
+```json
+{
+  "requests": 350,
+  "concurrency": 50,
+  "includeResponses": true,
+  "ipMode": "single"
 }
 ```
 
@@ -118,6 +134,19 @@ Out-of-stock test (POST `/testing/out-of-stock`):
   "requests": 10,
   "quantity": 1,
   "concurrency": 10,
-  "includeResponses": false
+  "includeResponses": true,
+  "ipMode": "single"
+}
+```
+
+Use `ipMode: \"rotate\"` with `ipPool` to simulate multiple client IPs:
+```json
+{
+  "vendorId": "<vendorId>",
+  "requests": 20,
+  "concurrency": 10,
+  "includeResponses": true,
+  "ipMode": "rotate",
+  "ipPool": ["203.0.113.10", "203.0.113.11", "203.0.113.12"]
 }
 ```

@@ -292,7 +292,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"vendorId\": \"{{vendorId}}\",\n  \"requests\": 150,\n  \"concurrency\": 25,\n  \"includeResponses\": false\n}"
+          "raw": "{\n  \"vendorId\": \"{{vendorId}}\",\n  \"requests\": 150,\n  \"concurrency\": 25,\n  \"includeResponses\": true,\n  \"ipMode\": \"single\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/testing/rate-limit",
@@ -322,7 +322,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"vendorId\": \"{{vendorId}}\",\n  \"stock\": 5,\n  \"requests\": 10,\n  \"quantity\": 1,\n  \"concurrency\": 10,\n  \"includeResponses\": false\n}"
+          "raw": "{\n  \"vendorId\": \"{{vendorId}}\",\n  \"stock\": 5,\n  \"requests\": 10,\n  \"quantity\": 1,\n  \"concurrency\": 10,\n  \"includeResponses\": true,\n  \"ipMode\": \"single\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/testing/out-of-stock",
@@ -332,6 +332,96 @@
           "path": [
             "testing",
             "out-of-stock"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Test Rate Limit (Rotate IPs)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-test-token",
+            "value": "{{testToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vendorId\": \"{{vendorId}}\",\n  \"requests\": 20,\n  \"concurrency\": 10,\n  \"includeResponses\": true,\n  \"ipMode\": \"rotate\",\n  \"ipPool\": [\n    \"203.0.113.10\",\n    \"203.0.113.11\",\n    \"203.0.113.12\"\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/testing/rate-limit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "testing",
+            "rate-limit"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Test Global Rate Limit",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-test-token",
+            "value": "{{testToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requests\": 350,\n  \"concurrency\": 50,\n  \"includeResponses\": true,\n  \"ipMode\": \"single\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/testing/global-rate-limit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "testing",
+            "global-rate-limit"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Test Global Rate Limit (Rotate IPs)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "x-test-token",
+            "value": "{{testToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"requests\": 30,\n  \"concurrency\": 10,\n  \"includeResponses\": true,\n  \"ipMode\": \"rotate\",\n  \"ipPool\": [\n    \"203.0.113.20\",\n    \"203.0.113.21\",\n    \"203.0.113.22\"\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/testing/global-rate-limit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "testing",
+            "global-rate-limit"
           ]
         }
       }

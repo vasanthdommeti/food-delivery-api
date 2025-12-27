@@ -31,19 +31,22 @@ const ensureTestingEnabled = (req, res, next) => {
   return next();
 };
 
-const postJson = (path, body) =>
+const sendRequest = ({ method, path, body, headers = {} }) =>
   new Promise((resolve, reject) => {
-    const payload = JSON.stringify(body);
+    const payload = body ? JSON.stringify(body) : null;
     const request = http.request(
       {
         hostname: '127.0.0.1',
         port: env.port,
         path: `/api/v1${path}`,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(payload)
-        }
+        method,
+        headers: payload
+          ? {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(payload),
+              ...headers
+            }
+          : headers
       },
       (response) => {
         let data = '';
@@ -63,11 +66,46 @@ const postJson = (path, body) =>
     );
 
     request.on('error', reject);
-    request.write(payload);
+    if (payload) {
+      request.write(payload);
+    }
     request.end();
   });
 
-const runBurst = async ({ requests, concurrency, payloadFactory }) => {
+const normalizeIpMode = (ipMode) => {
+  if (!ipMode) {
+    return 'single';
+  }
+  const mode = String(ipMode).toLowerCase();
+  if (!['single', 'rotate', 'none'].includes(mode)) {
+    return null;
+  }
+  return mode;
+};
+
+const resolveIp = (index, ipMode, ipPool) => {
+  if (ipMode === 'none') {
+    return null;
+  }
+
+  if (Array.isArray(ipPool) && ipPool.length) {
+    if (ipMode === 'single') {
+      return ipPool[0];
+    }
+    return ipPool[index % ipPool.length];
+  }
+
+  if (ipMode === 'single') {
+    return '203.0.113.10';
+  }
+
+  const octet = (index % 250) + 1;
+  return `203.0.113.${octet}`;
+};
+
+const buildHeaders = (ip) => (ip ? { 'X-Forwarded-For': ip } : {});
+
+const runBurst = async ({ requests, concurrency, method, path, payloadFactory, ipMode, ipPool }) => {
   const results = new Array(requests);
   let index = 0;
 
@@ -80,11 +118,18 @@ const runBurst = async ({ requests, concurrency, payloadFactory }) => {
       }
 
       try {
-        const payload = payloadFactory(current + 1);
-        const response = await postJson('/orders', payload);
+        const payload = payloadFactory ? payloadFactory(current + 1) : null;
+        const ip = resolveIp(current, ipMode, ipPool);
+        const response = await sendRequest({
+          method,
+          path,
+          body: payload,
+          headers: buildHeaders(ip)
+        });
         results[current] = {
           request: current + 1,
           payload,
+          ip,
           status: response.status,
           response: response.body
         };
@@ -129,7 +174,24 @@ router.use(ensureTestingEnabled);
 router.post(
   '/rate-limit',
   asyncHandler(async (req, res) => {
-    const { vendorId, requests = 150, concurrency = 25, items, includeResponses = false } = req.body || {};
+    const {
+      vendorId,
+      requests = 150,
+      concurrency = 25,
+      items,
+      includeResponses = true,
+      ipMode,
+      ipPool
+    } = req.body || {};
+
+    const normalizedIpMode = normalizeIpMode(ipMode);
+    if (!normalizedIpMode) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'ipMode must be one of single, rotate, none.' },
+        requestId: req.id
+      });
+    }
 
     if (!validateObjectId(vendorId)) {
       return res.status(400).json({
@@ -171,6 +233,10 @@ router.post(
     const results = await runBurst({
       requests,
       concurrency: Math.min(concurrency, requests),
+      method: 'POST',
+      path: '/orders',
+      ipMode: normalizedIpMode,
+      ipPool,
       payloadFactory: (index) => ({
         userId: `rate_test_${index}`,
         vendorId,
@@ -187,6 +253,71 @@ router.post(
         vendorId,
         requests,
         concurrency: Math.min(concurrency, requests),
+        ipMode: normalizedIpMode,
+        ipPool: Array.isArray(ipPool) ? ipPool : undefined,
+        summary,
+        results: includeResponses ? results : undefined
+      },
+      requestId: req.id
+    });
+  })
+);
+
+router.post(
+  '/global-rate-limit',
+  asyncHandler(async (req, res) => {
+    const {
+      requests = 350,
+      concurrency = 50,
+      includeResponses = true,
+      ipMode,
+      ipPool
+    } = req.body || {};
+
+    const normalizedIpMode = normalizeIpMode(ipMode);
+    if (!normalizedIpMode) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'ipMode must be one of single, rotate, none.' },
+        requestId: req.id
+      });
+    }
+
+    if (!isPositiveInteger(requests) || requests > 500) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Requests must be an integer between 1 and 500.' },
+        requestId: req.id
+      });
+    }
+
+    if (!isPositiveInteger(concurrency) || concurrency > 100) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Concurrency must be an integer between 1 and 100.' },
+        requestId: req.id
+      });
+    }
+
+    const results = await runBurst({
+      requests,
+      concurrency: Math.min(concurrency, requests),
+      method: 'GET',
+      path: '/health',
+      ipMode: normalizedIpMode,
+      ipPool
+    });
+
+    const summary = summarizeResults(results);
+
+    res.json({
+      success: true,
+      data: {
+        mode: 'global-rate-limit',
+        requests,
+        concurrency: Math.min(concurrency, requests),
+        ipMode: normalizedIpMode,
+        ipPool: Array.isArray(ipPool) ? ipPool : undefined,
         summary,
         results: includeResponses ? results : undefined
       },
@@ -207,8 +338,19 @@ router.post(
       requests = 10,
       quantity = 1,
       concurrency = 10,
-      includeResponses = false
+      includeResponses = true,
+      ipMode,
+      ipPool
     } = req.body || {};
+
+    const normalizedIpMode = normalizeIpMode(ipMode);
+    if (!normalizedIpMode) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'ipMode must be one of single, rotate, none.' },
+        requestId: req.id
+      });
+    }
 
     if (!validateObjectId(vendorId)) {
       return res.status(400).json({
@@ -291,6 +433,10 @@ router.post(
     const results = await runBurst({
       requests,
       concurrency: Math.min(concurrency, requests),
+      method: 'POST',
+      path: '/orders',
+      ipMode: normalizedIpMode,
+      ipPool,
       payloadFactory: (index) => ({
         userId: `stock_test_${index}`,
         vendorId,
@@ -309,6 +455,8 @@ router.post(
         createdProduct,
         requests,
         concurrency: Math.min(concurrency, requests),
+        ipMode: normalizedIpMode,
+        ipPool: Array.isArray(ipPool) ? ipPool : undefined,
         summary,
         results: includeResponses ? results : undefined
       },
