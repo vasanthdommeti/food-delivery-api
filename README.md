@@ -95,6 +95,7 @@ A Postman collection is included at:
 - `postman/food-delivery-api.postman_collection.json`
 
 Import it and set the `baseUrl` variable (example: `http://localhost:3000/api/v1`).
+Run `Create Vendor (Once)` first to populate `vendorId`, which is reused by all vendor-dependent requests.
 
 ## Testing Endpoints (Optional)
 Enable in `.env`:

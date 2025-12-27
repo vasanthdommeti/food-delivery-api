@@ -1,7 +1,8 @@
 {
   "info": {
     "name": "Food Delivery API",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run 'Create Vendor (Once)' first. It sets vendorId for all vendor-dependent requests."
   },
   "variable": [
     {
@@ -42,7 +43,7 @@
       }
     },
     {
-      "name": "Create Vendor",
+      "name": "Create Vendor (Once)",
       "event": [
         {
           "listen": "test",
@@ -78,7 +79,8 @@
             "vendors"
           ]
         }
-      }
+      },
+      "description": "Creates a single vendor and stores its id in collection variable 'vendorId'."
     },
     {
       "name": "List Vendors",
@@ -93,7 +95,8 @@
             "vendors"
           ]
         }
-      }
+      },
+      "description": "Lists vendors. Use 'Create Vendor (Once)' first to set vendorId for other requests."
     },
     {
       "name": "Create Product",
