@@ -18,9 +18,6 @@ Base URL: `/api/v1`
 - `POST /products`
 - `GET /products`
 - `GET /products/:id`
-- `POST /promotions/six-hit/activate`
-- `POST /promotions/six-hit/deactivate`
-- `GET /promotions/six-hit`
 - `POST /orders`
 - `GET /orders/:id`
 
@@ -40,7 +37,7 @@ npm run dev
 ```
 
 ## Assumptions
-- The "six-hit" event is triggered by a trusted system or admin via `POST /promotions/six-hit/activate`.
+- The "six-hit" event is toggled by an internal operator updating the `promotions` collection in MongoDB.
 - Discounts apply while the promotion is active and before `expiresAt`.
 - Currency uses decimal numbers (2-decimal rounding). For production, consider integer minor units.
 - When `productId` is provided in order items, price/name are taken from inventory and stock is decremented atomically.
@@ -53,6 +50,19 @@ npm run dev
 - Configurable MongoDB pool size (`MONGO_MAX_POOL_SIZE`) to tune concurrent connections.
 - Stock deductions use atomic `$inc` + `$gte` to prevent overselling during bursts.
 - Stateless API design enables horizontal scaling behind a load balancer.
+
+## Promotion Control (Internal)
+To enable/disable the six-hit discount without public APIs, update MongoDB directly:
+
+Enable:
+```bash
+mongosh "$MONGODB_URI" --eval 'db.promotions.updateOne({type:"six-hit"},{$set:{isActive:true,discountPercent:60,activatedAt:new Date(),expiresAt:new Date(Date.now()+10*60*1000)}},{upsert:true})'
+```
+
+Disable:
+```bash
+mongosh "$MONGODB_URI" --eval 'db.promotions.updateOne({type:"six-hit"},{$set:{isActive:false}},{upsert:true})'
+```
 
 ## Deployment (AWS Lightsail)
 1. Create a Lightsail instance (Ubuntu + Node.js or base Ubuntu).

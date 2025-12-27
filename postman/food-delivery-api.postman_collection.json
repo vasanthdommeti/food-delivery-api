@@ -122,35 +122,6 @@
       }
     },
     {
-      "name": "Activate Six Hit Promotion",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"discountPercent\": 60,\n  \"durationMinutes\": 10\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/promotions/six-hit/activate",
-          "host": ["{{baseUrl}}"],
-          "path": ["promotions", "six-hit", "activate"]
-        }
-      }
-    },
-    {
-      "name": "Promotion Status",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "{{baseUrl}}/promotions/six-hit",
-          "host": ["{{baseUrl}}"],
-          "path": ["promotions", "six-hit"]
-        }
-      }
-    },
-    {
       "name": "Create Order",
       "event": [
         {
@@ -226,17 +197,6 @@
           "raw": "{{baseUrl}}/orders/{{orderId}}",
           "host": ["{{baseUrl}}"],
           "path": ["orders", "{{orderId}}"]
-        }
-      }
-    },
-    {
-      "name": "Deactivate Six Hit Promotion",
-      "request": {
-        "method": "POST",
-        "url": {
-          "raw": "{{baseUrl}}/promotions/six-hit/deactivate",
-          "host": ["{{baseUrl}}"],
-          "path": ["promotions", "six-hit", "deactivate"]
         }
       }
     }
