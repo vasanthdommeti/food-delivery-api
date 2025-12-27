@@ -154,17 +154,23 @@ router.post(
     const discountPercent = activePromotion ? activePromotion.discountPercent : 0;
     const { subtotal, discountAmount, total } = calculateTotals(resolvedItems, discountPercent);
 
-    const order = await Order.create({
-      userId: userId.trim(),
-      vendorId,
-      items: resolvedItems,
-      subtotal,
-      discountPercent,
-      discountAmount,
-      total,
-      promotionType: activePromotion ? PROMO_TYPE : undefined,
-      status: 'PLACED'
-    });
+    let order;
+    try {
+      order = await Order.create({
+        userId: userId.trim(),
+        vendorId,
+        items: resolvedItems,
+        subtotal,
+        discountPercent,
+        discountAmount,
+        total,
+        promotionType: activePromotion ? PROMO_TYPE : undefined,
+        status: 'PLACED'
+      });
+    } catch (err) {
+      await releaseInventory(reservations);
+      throw err;
+    }
 
     res.status(201).json({
       success: true,

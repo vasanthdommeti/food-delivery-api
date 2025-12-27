@@ -111,6 +111,17 @@
       }
     },
     {
+      "name": "Get Product",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["products", "{{productId}}"]
+        }
+      }
+    },
+    {
       "name": "Activate Six Hit Promotion",
       "request": {
         "method": "POST",
