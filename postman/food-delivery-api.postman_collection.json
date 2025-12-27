@@ -6,6 +6,7 @@
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:3000/api/v1" },
     { "key": "vendorId", "value": "" },
+    { "key": "productId", "value": "" },
     { "key": "orderId", "value": "" }
   ],
   "item": [
@@ -64,6 +65,52 @@
       }
     },
     {
+      "name": "Create Product",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "if (response && response.data && response.data._id) {",
+              "  pm.collectionVariables.set('productId', response.data._id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vendorId\": \"{{vendorId}}\",\n  \"name\": \"Paneer Wrap\",\n  \"price\": 120,\n  \"stock\": 5\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["products"]
+        }
+      }
+    },
+    {
+      "name": "List Products",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/products?vendorId={{vendorId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["products"],
+          "query": [
+            { "key": "vendorId", "value": "{{vendorId}}" }
+          ]
+        }
+      }
+    },
+    {
       "name": "Activate Six Hit Promotion",
       "request": {
         "method": "POST",
@@ -116,6 +163,42 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"userId\": \"user_123\",\n  \"vendorId\": \"{{vendorId}}\",\n  \"items\": [\n    { \"name\": \"Burger\", \"quantity\": 2, \"price\": 150 },\n    { \"name\": \"Fries\", \"quantity\": 1, \"price\": 80 }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"]
+        }
+      }
+    },
+    {
+      "name": "Create Order (Product)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"user_456\",\n  \"vendorId\": \"{{vendorId}}\",\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 1 }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"]
+        }
+      }
+    },
+    {
+      "name": "Create Order (Product - Out Of Stock)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"user_789\",\n  \"vendorId\": \"{{vendorId}}\",\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 6 }\n  ]\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/orders",

@@ -1,5 +1,6 @@
 const express = require('express');
 const Order = require('../models/Order');
+const Product = require('../models/Product');
 const Vendor = require('../models/Vendor');
 const env = require('../config/env');
 const { orderLimiter } = require('../middlewares/rateLimiter');
@@ -9,6 +10,23 @@ const asyncHandler = require('../utils/asyncHandler');
 const { isNonEmptyString, validateObjectId, validateItems } = require('../utils/validation');
 
 const router = express.Router();
+
+const releaseInventory = async (reservations) => {
+  if (!reservations.length) {
+    return;
+  }
+
+  const results = await Promise.allSettled(
+    reservations.map(({ productId, quantity }) =>
+      Product.updateOne({ _id: productId }, { $inc: { stock: quantity } })
+    )
+  );
+
+  const failures = results.filter((result) => result.status === 'rejected');
+  if (failures.length) {
+    console.error('Failed to release inventory for some items.');
+  }
+};
 
 router.post(
   '/',
@@ -65,14 +83,81 @@ router.post(
       }
     }
 
+    const resolvedItems = [];
+    const reservations = [];
+
+    for (const item of items) {
+      if (item.productId) {
+        const updatedProduct = await Product.findOneAndUpdate(
+          {
+            _id: item.productId,
+            vendorId,
+            isActive: true,
+            stock: { $gte: item.quantity }
+          },
+          { $inc: { stock: -item.quantity } },
+          { new: true }
+        ).lean();
+
+        if (!updatedProduct) {
+          await releaseInventory(reservations);
+
+          const existingProduct = await Product.findById(item.productId).lean();
+          if (!existingProduct || String(existingProduct.vendorId) !== String(vendorId)) {
+            return res.status(404).json({
+              success: false,
+              error: { code: 'PRODUCT_NOT_FOUND', message: 'Product not found for this vendor.' },
+              requestId: req.id
+            });
+          }
+
+          if (!existingProduct.isActive) {
+            return res.status(409).json({
+              success: false,
+              error: { code: 'PRODUCT_INACTIVE', message: 'Product is not available.' },
+              requestId: req.id
+            });
+          }
+
+          return res.status(409).json({
+            success: false,
+            error: {
+              code: 'OUT_OF_STOCK',
+              message: 'Insufficient stock for the requested item.',
+              details: {
+                productId: item.productId,
+                availableStock: existingProduct.stock,
+                requestedQuantity: item.quantity
+              }
+            },
+            requestId: req.id
+          });
+        }
+
+        reservations.push({ productId: updatedProduct._id, quantity: item.quantity });
+        resolvedItems.push({
+          productId: updatedProduct._id,
+          name: updatedProduct.name,
+          price: updatedProduct.price,
+          quantity: item.quantity
+        });
+      } else {
+        resolvedItems.push({
+          name: item.name.trim(),
+          price: item.price,
+          quantity: item.quantity
+        });
+      }
+    }
+
     const activePromotion = await getActivePromotion();
     const discountPercent = activePromotion ? activePromotion.discountPercent : 0;
-    const { subtotal, discountAmount, total } = calculateTotals(items, discountPercent);
+    const { subtotal, discountAmount, total } = calculateTotals(resolvedItems, discountPercent);
 
     const order = await Order.create({
       userId: userId.trim(),
       vendorId,
-      items,
+      items: resolvedItems,
       subtotal,
       discountPercent,
       discountAmount,

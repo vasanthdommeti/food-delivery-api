@@ -15,6 +15,9 @@ Base URL: `/api/v1`
 - `POST /vendors`
 - `GET /vendors`
 - `GET /vendors/:id/metrics?windowMinutes=60`
+- `POST /products`
+- `GET /products`
+- `GET /products/:id`
 - `POST /promotions/six-hit/activate`
 - `POST /promotions/six-hit/deactivate`
 - `GET /promotions/six-hit`
@@ -40,6 +43,7 @@ npm run dev
 - The "six-hit" event is triggered by a trusted system or admin via `POST /promotions/six-hit/activate`.
 - Discounts apply while the promotion is active and before `expiresAt`.
 - Currency uses decimal numbers (2-decimal rounding). For production, consider integer minor units.
+- When `productId` is provided in order items, price/name are taken from inventory and stock is decremented atomically.
 
 ## Performance / Scaling Notes
 - Indexed `vendorId` and `createdAt` on orders to support high-throughput reads and metrics.
@@ -47,6 +51,7 @@ npm run dev
 - Vendor capacity enforcement via `ENFORCE_VENDOR_LIMIT` (defaults to true).
 - Configurable per-IP rate limiting for the API and order placement (`RATE_LIMIT_*`, `ORDER_RATE_LIMIT_*`).
 - Configurable MongoDB pool size (`MONGO_MAX_POOL_SIZE`) to tune concurrent connections.
+- Stock deductions use atomic `$inc` + `$gte` to prevent overselling during bursts.
 - Stateless API design enables horizontal scaling behind a load balancer.
 
 ## Deployment (AWS Lightsail)
