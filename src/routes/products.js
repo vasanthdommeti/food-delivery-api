@@ -126,4 +126,48 @@ router.get(
   })
 );
 
+router.patch(
+  '/:id/stock',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { stock } = req.body || {};
+
+    if (!validateObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid product id.' },
+        requestId: req.id
+      });
+    }
+
+    if (typeof stock !== 'number' || !Number.isInteger(stock) || stock < 0) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Stock must be an integer >= 0.' },
+        requestId: req.id
+      });
+    }
+
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { $set: { stock } },
+      { new: true }
+    ).lean();
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Product not found.' },
+        requestId: req.id
+      });
+    }
+
+    res.json({
+      success: true,
+      data: product,
+      requestId: req.id
+    });
+  })
+);
+
 module.exports = router;

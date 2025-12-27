@@ -18,6 +18,7 @@ Base URL: `/api/v1`
 - `POST /products`
 - `GET /products`
 - `GET /products/:id`
+- `PATCH /products/:id/stock`
 - `POST /orders`
 - `GET /orders/:id`
 - `POST /testing/rate-limit` (disabled by default)

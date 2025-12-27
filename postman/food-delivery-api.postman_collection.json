@@ -175,6 +175,33 @@
       }
     },
     {
+      "name": "Update Product Stock",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"stock\": 10\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}/stock",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{productId}}",
+            "stock"
+          ]
+        }
+      }
+    },
+    {
       "name": "Create Order",
       "event": [
         {
